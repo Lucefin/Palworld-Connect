@@ -5,3 +5,4 @@
 .player-map{background:linear-gradient(145deg,#0f1d2e,#0b1725)}.player-map .map-grid,.player-map .map-origin{display:none}.player-map.map-enabled{background:radial-gradient(circle at center,#163653 0,#0b1929 55%,#08131f 100%)}.player-map.map-enabled .map-grid,.player-map.map-enabled .map-origin{display:block}
 .map-controls{display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:flex-end}@media(max-width:600px){.map-head{align-items:flex-start;gap:16px}.map-controls{display:grid;gap:10px;justify-items:end}}
 .player-map::after{content:"";position:absolute;inset:8px;border:1px solid #59d9eb66;border-radius:7px;box-shadow:inset 0 0 18px #59d9eb0d;pointer-events:none;z-index:2}
+.map-viewport{position:absolute;inset:0;transform-origin:0 0;will-change:transform}.player-map{overscroll-behavior:contain}

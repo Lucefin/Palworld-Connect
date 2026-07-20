@@ -1,6 +1,6 @@
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
-const state = { profiles: [], profileId: '', selectedEndpoint: 'info', editingId: '', players: [], mapEnabled: false, mapAutoUpdate: false, mapUpdateTimer: null };
+const state = { profiles: [], profileId: '', selectedEndpoint: 'info', editingId: '', players: [], mapEnabled: false, mapAutoUpdate: false, mapUpdateTimer: null, mapZoom: 1, mapPanX: 0, mapPanY: 0 };
 
 const catalog = {
   info: { label: 'Server info', method: 'GET', path: '/info', description: 'Server identity and version.' },
@@ -80,14 +80,41 @@ function renderPlayers(players) {
 function renderPlayerMap() {
   const map=$('#playerMap');
   const located=state.players.filter(p=>Number.isFinite(p.location_x)&&Number.isFinite(p.location_y));
-  if(!located.length){map.innerHTML='<div class="map-grid" aria-hidden="true"></div><div class="map-origin" aria-hidden="true">0, 0</div><div class="map-empty">No player locations are available.</div>';return}
+  if(!located.length){map.innerHTML='<div class="map-viewport"><div class="map-grid" aria-hidden="true"></div><div class="map-origin" aria-hidden="true">0, 0</div><div class="map-empty">No player locations are available.</div></div>';applyMapTransform();return}
   const limit=550000;
-  map.innerHTML=`<div class="map-grid" aria-hidden="true"></div><div class="map-origin" aria-hidden="true">0, 0</div>${located.map(p=>{
+  map.innerHTML=`<div class="map-viewport"><div class="map-grid" aria-hidden="true"></div><div class="map-origin" aria-hidden="true">0, 0</div>${located.map(p=>{
     const left=Math.max(2,Math.min(98,(p.location_x+limit)/(limit*2)*100));
     const top=Math.max(2,Math.min(98,(limit-p.location_y)/(limit*2)*100));
     const name=escapeHtml(p.name||'Unknown player');
     return `<div class="player-marker" style="left:${left}%;top:${top}%" title="${name}: ${p.location_x.toFixed(0)}, ${p.location_y.toFixed(0)}"><span></span><strong>${name}</strong></div>`;
-  }).join('')}`;
+  }).join('')}</div>`;
+  applyMapTransform();
+}
+function applyMapTransform() {
+  const viewport=$('#playerMap .map-viewport');
+  if(viewport)viewport.style.transform=`translate(${state.mapPanX}px,${state.mapPanY}px) scale(${state.mapZoom})`;
+}
+function zoomMap(event) {
+  event.preventDefault();
+  const map=$('#playerMap');
+  const bounds=map.getBoundingClientRect();
+  const cursorX=event.clientX-bounds.left;
+  const cursorY=event.clientY-bounds.top;
+  const oldZoom=state.mapZoom;
+  const factor=Math.exp(-event.deltaY*.0015);
+  const newZoom=Math.max(.5,Math.min(5,oldZoom*factor));
+  const contentX=(cursorX-state.mapPanX)/oldZoom;
+  const contentY=(cursorY-state.mapPanY)/oldZoom;
+  state.mapPanX=cursorX-contentX*newZoom;
+  state.mapPanY=cursorY-contentY*newZoom;
+  state.mapZoom=newZoom;
+  applyMapTransform();
+}
+function resetMapView() {
+  state.mapZoom=1;
+  state.mapPanX=0;
+  state.mapPanY=0;
+  applyMapTransform();
 }
 function setMapEnabled(enabled) {
   state.mapEnabled=enabled;
@@ -124,7 +151,7 @@ async function runConfirmed(event) { event.preventDefault();const action=event.c
 
 function renderConsole() { $('#endpointList').innerHTML=Object.entries(catalog).map(([key,e])=>`<button class="endpoint ${key===state.selectedEndpoint?'active':''}" data-endpoint="${key}"><span>${e.label}</span><span class="method">${e.method}</span></button>`).join(''); const e=catalog[state.selectedEndpoint];$('#endpointMeta').innerHTML=`<p class="eyebrow">${e.method} · /v1/api${e.path}</p><h3>${e.label}</h3><p class="muted">${e.description}</p>`;$('#endpointForm').innerHTML=(e.fields||[]).map(f=>`<label>${f.label}<input name="${f.name}" type="${f.type||'text'}" ${f.required?'required':''}></label>`).join('')+`<button class="primary">Send request</button>`; }
 
-$$('.nav').forEach(btn=>btn.addEventListener('click',()=>{$$('.nav,.view').forEach(x=>x.classList.remove('active'));btn.classList.add('active');$(`#${btn.dataset.view}`).classList.add('active');$('#pageTitle').textContent=btn.textContent.trim();$('.sidebar').classList.remove('open')}));
+$$('.nav[data-view]').forEach(btn=>btn.addEventListener('click',()=>{$$('.nav,.view').forEach(x=>x.classList.remove('active'));btn.classList.add('active');$(`#${btn.dataset.view}`).classList.add('active');$('#pageTitle').textContent=btn.textContent.trim();$('.sidebar').classList.remove('open')}));
 $('#menu').onclick=()=>$('.sidebar').classList.toggle('open');
 $('#profileSelect').onchange=e=>{state.profileId=e.target.value;$('#statusDot').classList.remove('connected')};
 $('#connectBtn').onclick=connect;$('#profilesBtn').onclick=()=>$('#profilesDialog').showModal();$('#closeProfiles').onclick=()=>$('#profilesDialog').close();$('#newProfile').onclick=clearProfileForm;$('#saveProfile').onclick=saveProfile;
@@ -134,6 +161,8 @@ $$('[data-action]').forEach(b=>b.onclick=()=>confirmAction(b.dataset.action));$$
 $('#playerList').onclick=e=>{if(e.target.dataset.playerAction)confirmAction(e.target.dataset.playerAction,{userid:e.target.dataset.userid})};$('#confirmRun').onclick=runConfirmed;
 $('#mapToggle').onchange=e=>setMapEnabled(e.target.checked);
 $('#mapAutoUpdateToggle').onchange=e=>setMapAutoUpdate(e.target.checked);
+$('#mapReset').onclick=()=>{resetMapView();$('.nav[data-view="map"]').click()};
+$('#playerMap').addEventListener('wheel',zoomMap,{passive:false});
 $('#endpointList').onclick=e=>{const b=e.target.closest('[data-endpoint]');if(b){state.selectedEndpoint=b.dataset.endpoint;renderConsole()}};
 $('#endpointForm').onsubmit=async e=>{e.preventDefault();try{const result=await call(state.selectedEndpoint,Object.fromEntries(new FormData(e.target)));$('#responseOutput').textContent=JSON.stringify(result,null,2)}catch(err){$('#responseOutput').textContent=err.message}};
 $('#copyResponse').onclick=()=>navigator.clipboard.writeText($('#responseOutput').textContent);
