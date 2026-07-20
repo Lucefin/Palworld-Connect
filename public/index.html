@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#09111f"><title>Palworld Connect</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brandmark">P</div><div><strong>PALWORLD</strong><span>SERVER CONSOLE</span></div></div>
+      <nav>
+        <button class="nav active" data-view="dashboard"><span>⌂</span> Overview</button>
+        <button class="nav" data-view="players"><span>♙</span> Players</button>
+        <button class="nav" data-view="settings"><span>⚙</span> Settings</button>
+        <button class="nav" data-view="world"><span>◇</span> World data</button>
+        <button class="nav" data-view="console"><span>›_</span> API console</button>
+      </nav>
+      <div class="sidebar-foot"><span class="pulse"></span><div><small>REST API</small><strong>v1 / 12 endpoints</strong></div></div>
+    </aside>
+
+    <main>
+      <header>
+        <button id="menu" class="icon mobile">☰</button>
+        <div><p class="eyebrow">DEDICATED SERVER</p><h1 id="pageTitle">Overview</h1></div>
+        <div class="connection">
+          <span id="statusDot" class="status-dot"></span>
+          <select id="profileSelect" aria-label="Server profile"><option value="">Select a server</option></select>
+          <button id="connectBtn" class="primary">Connect</button>
+          <button id="profilesBtn" class="icon" title="Manage profiles">⚙</button>
+        </div>
+      </header>
+
+      <div id="notice" class="notice hidden"></div>
+      <section id="dashboard" class="view active">
+        <div class="hero card">
+          <div><span id="heroStatus" class="badge">NOT CONNECTED</span><h2 id="serverName">Choose a server profile</h2><p id="serverDescription">Connect to inspect and manage your Palworld world.</p><div id="worldGuid" class="mono muted"></div></div>
+          <div class="hero-art"><div class="orb one"></div><div class="orb two"></div><div class="island">✦</div></div>
+        </div>
+        <div class="stats">
+          <article class="card stat"><span>ONLINE PLAYERS</span><strong id="metricPlayers">—</strong><small id="metricMax">of — slots</small></article>
+          <article class="card stat"><span>SERVER FPS</span><strong id="metricFps">—</strong><small id="metricFrame">— ms frame time</small></article>
+          <article class="card stat"><span>UPTIME</span><strong id="metricUptime">—</strong><small id="metricDays">World day —</small></article>
+          <article class="card stat"><span>BASE CAMPS</span><strong id="metricCamps">—</strong><small>active across world</small></article>
+        </div>
+        <div class="grid-two">
+          <article class="card panel"><div class="panel-head"><div><p class="eyebrow">QUICK ACTION</p><h3>Broadcast message</h3></div></div><form id="announceForm"><textarea name="message" placeholder="Message all players…" required maxlength="500"></textarea><button class="primary">Broadcast</button></form></article>
+          <article class="card panel"><div class="panel-head"><div><p class="eyebrow">WORLD CONTROL</p><h3>Server operations</h3></div></div><div class="actions"><button data-action="save" class="action-btn">Save world <span>Safe</span></button><button data-action="shutdown" class="action-btn">Graceful shutdown <span>Timed</span></button><button data-action="stop" class="action-btn danger">Force stop <span>Danger</span></button></div></article>
+        </div>
+      </section>
+
+      <section id="players" class="view"><div class="section-head"><div><p class="eyebrow">LIVE ROSTER</p><h2>Connected players</h2></div><button data-refresh="players" class="ghost">↻ Refresh</button></div><div id="playerList" class="card table-wrap empty">Connect to load players.</div></section>
+      <section id="settings" class="view"><div class="section-head"><div><p class="eyebrow">CONFIGURATION</p><h2>Server settings</h2></div><button data-refresh="settings" class="ghost">↻ Refresh</button></div><div id="settingsGrid" class="settings-grid"><div class="card empty">Connect to inspect settings.</div></div></section>
+      <section id="world" class="view"><div class="section-head"><div><p class="eyebrow">ACTOR SNAPSHOT</p><h2>World data</h2></div><button data-refresh="gameData" class="ghost">↻ Load snapshot</button></div><div id="worldSummary" class="stats mini"></div><pre id="worldJson" class="card code">Connect to load world actor data.</pre></section>
+      <section id="console" class="view"><div class="section-head"><div><p class="eyebrow">ADVANCED</p><h2>API console</h2></div></div><div class="console-grid"><div id="endpointList" class="card endpoint-list"></div><div class="card console-card"><div id="endpointMeta"></div><form id="endpointForm"></form><div class="response-head"><span>RESPONSE</span><button id="copyResponse" class="text-btn">Copy</button></div><pre id="responseOutput" class="code inner">Select an endpoint to begin.</pre></div></div></section>
+    </main>
+  </div>
+
+  <dialog id="profilesDialog"><form method="dialog" class="modal"><div class="modal-head"><div><p class="eyebrow">CONNECTIONS</p><h2>Server profiles</h2></div><button value="cancel" class="icon">×</button></div><div id="savedProfiles" class="saved-profiles"></div><hr><div class="form-grid"><label>Profile name<input id="profileName" placeholder="My Palworld" required></label><label>Server URL<input id="profileUrl" placeholder="http://192.168.1.20:8212" required></label><label>Username<input id="profileUsername" autocomplete="username" placeholder="admin"></label><label>Password<input id="profilePassword" type="password" autocomplete="current-password" placeholder="Leave blank to keep saved"></label></div><p class="hint">URLs may include <code>/v1/api</code>; it will be added automatically. Credentials are stored in the app data volume.</p><div class="modal-actions"><button id="newProfile" type="button" class="ghost">Clear</button><button id="saveProfile" type="button" class="primary">Save profile</button></div></form></dialog>
+  <dialog id="confirmDialog"><form method="dialog" class="modal confirm"><div class="warning-icon">!</div><h2 id="confirmTitle">Confirm action</h2><p id="confirmText"></p><div id="confirmFields"></div><div class="modal-actions"><button value="cancel" class="ghost">Cancel</button><button id="confirmRun" value="default" class="danger-solid">Confirm</button></div></form></dialog>
+  <script src="/app.js" type="module"></script>
+</body></html>

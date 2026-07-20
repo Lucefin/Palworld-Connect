@@ -1,0 +1,12 @@
+services:
+  palworld-connect:
+    build: .
+    container_name: palworld-connect
+    ports:
+      - "3000:3000"
+    volumes:
+      - palworld-connect-data:/data
+    restart: unless-stopped
+
+volumes:
+  palworld-connect-data:
