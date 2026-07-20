@@ -13,7 +13,7 @@
         <button class="nav active" data-view="dashboard"><span>⌂</span> Overview</button>
         <button class="nav" data-view="players"><span>♙</span> Players</button>
         <button class="nav" data-view="map"><span>⌖</span> Map</button>
-        <button id="mapReset" class="nav" type="button"><span>↺</span> Reset map</button>
+        <button id="mapResetNav" class="nav" type="button"><span>↺</span> Reset map</button>
         <button class="nav" data-view="settings"><span>⚙</span> Settings</button>
         <button class="nav" data-view="world"><span>◇</span> World data</button>
         <button class="nav" data-view="console"><span>›_</span> API console</button>
@@ -59,11 +59,17 @@
         <div class="section-head map-head">
           <div><p class="eyebrow">PLAYER LOCATIONS</p><h2>Map</h2></div>
           <div class="map-controls">
+            <button id="mapReset" type="button" class="ghost">Reset</button>
             <label class="map-toggle"><span>Enable map</span><input id="mapToggle" type="checkbox" role="switch" aria-controls="playerMap"><span class="toggle-track" aria-hidden="true"></span></label>
+            <label class="map-toggle"><span>Blur</span><input id="mapBlurToggle" type="checkbox" role="switch" aria-controls="playerMap" checked><span class="toggle-track" aria-hidden="true"></span></label>
             <label class="map-toggle"><span>Auto-update (10s)</span><input id="mapAutoUpdateToggle" type="checkbox" role="switch" aria-controls="playerMap"><span class="toggle-track" aria-hidden="true"></span></label>
           </div>
         </div>
-        <div id="playerMap" class="card player-map" aria-label="Current player locations"></div>
+        <div id="mapAssetNotice" class="notice map-asset-notice hidden" role="status">
+          <strong>Map image not found.</strong>
+          <span>Download <a href="https://palworld.wiki.gg/wiki/File:World_Map.webp" target="_blank" rel="noreferrer">World Map.webp from The Palworld Wiki</a>, rename it to <code>palworld-world-map.webp</code>, and place it at <code>public/palworld-world-map.webp</code>.</span>
+        </div>
+        <div id="playerMap" class="card player-map map-blurred" aria-label="Current player locations"></div>
       </section>
       <section id="settings" class="view"><div class="section-head"><div><p class="eyebrow">CONFIGURATION</p><h2>Server settings</h2></div><button data-refresh="settings" class="ghost">↻ Refresh</button></div><div id="settingsGrid" class="settings-grid"><div class="card empty">Connect to inspect settings.</div></div></section>
       <section id="world" class="view"><div class="section-head"><div><p class="eyebrow">ACTOR SNAPSHOT</p><h2>World data</h2></div><button data-refresh="gameData" class="ghost">↻ Load snapshot</button></div><div id="worldSummary" class="stats mini"></div><pre id="worldJson" class="card code">Connect to load world actor data.</pre></section>

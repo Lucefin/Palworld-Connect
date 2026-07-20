@@ -110,7 +110,7 @@ async function proxy(req, res, id, action) {
   } finally { clearTimeout(timeout); }
 }
 
-const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
+const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 function staticFile(req, res, pathname) {
   const relative = pathname === '/' ? 'index.html' : pathname.slice(1);
   const file = path.resolve(PUBLIC, relative);
@@ -125,6 +125,7 @@ export async function handler(req, res) {
     const url = new URL(req.url, 'http://localhost');
     const parts = url.pathname.split('/').filter(Boolean);
     if (url.pathname === '/api/health' && req.method === 'GET') return json(res, 200, { ok: true });
+    if (url.pathname === '/api/map-status' && req.method === 'GET') return json(res, 200, { present: existsSync(path.join(PUBLIC, 'palworld-world-map.webp')) });
     if (url.pathname === '/api/endpoints' && req.method === 'GET') return json(res, 200, endpoints);
     if (url.pathname === '/api/profiles' && req.method === 'GET') return json(res, 200, (await profiles()).map(publicProfile));
     if (url.pathname === '/api/profiles' && req.method === 'POST') {

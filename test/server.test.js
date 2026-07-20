@@ -15,6 +15,8 @@ test.after(async()=>{await new Promise(r=>server.close(r));await rm(dataDir,{rec
 
 test('declares all 12 official endpoints',()=>assert.deepEqual(Object.keys(endpoints),['info','players','settings','metrics','gameData','announce','kick','ban','unban','save','shutdown','stop']));
 test('health check works',async()=>{const r=await fetch(`${base}/api/health`);assert.equal(r.status,200);assert.deepEqual(await r.json(),{ok:true})});
+test('reports whether the local world map is installed',async()=>{const r=await fetch(`${base}/api/map-status`);assert.equal(r.status,200);assert.deepEqual(await r.json(),{present:true})});
+test('serves the world map as WebP',async()=>{const r=await fetch(`${base}/palworld-world-map.webp`);assert.equal(r.status,200);assert.equal(r.headers.get('content-type'),'image/webp');assert.ok((await r.arrayBuffer()).byteLength>1_000_000)});
 test('profiles can be created, normalized, updated and deleted',async()=>{
   let r=await fetch(`${base}/api/profiles`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'Home',url:'localhost:8212',username:'admin',password:'secret'})});
   assert.equal(r.status,201);const p=await r.json();assert.equal(p.url,'http://localhost:8212/v1/api');assert.equal(p.hasPassword,true);assert.equal(p.password,undefined);

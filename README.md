@@ -36,3 +36,7 @@ Set `PORT` (default `3000`) and `DATA_DIR` (default `./data`) as needed.
 ## Supported API
 
 The app supports the complete REST API documented in Palworld Server Guide 1.0.0: `GET /info`, `/players`, `/settings`, `/metrics`, `/game-data`; and `POST /announce`, `/kick`, `/ban`, `/unban`, `/save`, `/shutdown`, `/stop`.
+
+## Map asset
+
+The world-map texture is sourced from [The Palworld Wiki](https://palworld.wiki.gg/wiki/File:World_Map.webp). Palworld and its game assets are property of Pocketpair, Inc.

@@ -6,3 +6,8 @@
 .map-controls{display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:flex-end}@media(max-width:600px){.map-head{align-items:flex-start;gap:16px}.map-controls{display:grid;gap:10px;justify-items:end}}
 .player-map::after{content:"";position:absolute;inset:8px;border:1px solid #59d9eb66;border-radius:7px;box-shadow:inset 0 0 18px #59d9eb0d;pointer-events:none;z-index:2}
 .map-viewport{position:absolute;inset:0;transform-origin:0 0;will-change:transform}.player-map{overscroll-behavior:contain}
+.player-map,.player-map.map-enabled{aspect-ratio:1;min-height:0;background:#08131f}.map-viewport::before{content:"";position:absolute;inset:0;background:url('/palworld-world-map.webp') center/100% 100% no-repeat;opacity:0;transition:opacity .2s,filter .2s;pointer-events:none}.player-map.map-enabled .map-viewport::before{opacity:1}.player-map.map-blurred .map-viewport::before{filter:blur(6px);transform:scale(1.015)}
+.map-grid::before{inset:0 auto 0 51.04%}.map-grid::after{inset:30.94% 0 auto}.map-origin{left:calc(51.04% + 7px);top:calc(30.94% + 6px)}
+.player-marker{transform:translate(-50%,-50%) scale(var(--map-inverse-zoom,1));transform-origin:center}
+.player-marker{display:block;width:13px;height:13px;gap:0}.player-marker span{display:block}.player-marker strong{position:absolute;left:20px;top:50%;transform:translateY(-50%)}
+.map-asset-notice{display:grid;gap:6px}.map-asset-notice span{font-size:12px}.map-asset-notice a{color:var(--cyan)}.map-asset-notice code{color:var(--text)}
