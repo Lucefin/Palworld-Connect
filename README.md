@@ -1,6 +1,6 @@
 # Palworld Connect
 
-A self-hosted web console for every endpoint in the Palworld Dedicated Server REST API. It provides server health and metrics, online player moderation, announcements, settings, world actor snapshots, save/shutdown controls, and a raw endpoint console.
+A simple, self-hosted, vibe coded web console for every endpoint in the Palworld Dedicated Server REST API. It provides server health and metrics, online player moderation, announcements, settings, world actor snapshots, save/shutdown controls, and a raw endpoint console.
 
 ## Run with Docker
 
