@@ -1,6 +1,6 @@
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
-const state = { profiles: [], profileId: '', selectedEndpoint: 'info', editingId: '' };
+const state = { profiles: [], profileId: '', selectedEndpoint: 'info', editingId: '', players: [], mapEnabled: false, mapAutoUpdate: false, mapUpdateTimer: null };
 
 const catalog = {
   info: { label: 'Server info', method: 'GET', path: '/info', description: 'Server identity and version.' },
@@ -72,8 +72,48 @@ async function connect() {
 function renderInfo(info={}) { $('#serverName').textContent=info.servername||activeProfile()?.name||'Palworld server'; $('#serverDescription').textContent=info.description||`Server version ${info.version||'unknown'}`; $('#worldGuid').textContent=info.worldguid?`WORLD  ${info.worldguid}`:''; }
 function renderMetrics(m={}) { $('#metricPlayers').textContent=m.currentplayernum??'—';$('#metricMax').textContent=`of ${m.maxplayernum??'—'} slots`;$('#metricFps').textContent=m.serverfps??'—';$('#metricFrame').textContent=`${m.serverframetime?.toFixed?.(2)??'—'} ms frame time`;$('#metricUptime').textContent=m.uptime!==undefined?formatUptime(m.uptime):'—';$('#metricDays').textContent=`World day ${m.days??'—'}`;$('#metricCamps').textContent=m.basecampnum??'—'; }
 function renderPlayers(players) {
+  state.players=players;
   $('#playerList').classList.remove('empty');
   $('#playerList').innerHTML=players.length?`<table><thead><tr><th>Player</th><th>Level</th><th>Ping</th><th>Location</th><th>User ID</th><th>Actions</th></tr></thead><tbody>${players.map(p=>`<tr><td><strong>${escapeHtml(p.name)}</strong><br><small class="muted">${escapeHtml(p.accountName||'')}</small></td><td>${p.level??'—'}</td><td>${p.ping?.toFixed?.(0)??'—'} ms</td><td>${p.location_x?.toFixed?.(0)??'—'}, ${p.location_y?.toFixed?.(0)??'—'}</td><td class="mono">${escapeHtml(p.userId||p.playerId||'')}</td><td class="player-actions"><button data-player-action="kick" data-userid="${escapeHtml(p.userId||'')}">Kick</button><button data-player-action="ban" data-userid="${escapeHtml(p.userId||'')}">Ban</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No players are currently online.</div>';
+  renderPlayerMap();
+}
+function renderPlayerMap() {
+  const map=$('#playerMap');
+  const located=state.players.filter(p=>Number.isFinite(p.location_x)&&Number.isFinite(p.location_y));
+  if(!located.length){map.innerHTML='<div class="map-grid" aria-hidden="true"></div><div class="map-origin" aria-hidden="true">0, 0</div><div class="map-empty">No player locations are available.</div>';return}
+  const limit=550000;
+  map.innerHTML=`<div class="map-grid" aria-hidden="true"></div><div class="map-origin" aria-hidden="true">0, 0</div>${located.map(p=>{
+    const left=Math.max(2,Math.min(98,(p.location_x+limit)/(limit*2)*100));
+    const top=Math.max(2,Math.min(98,(limit-p.location_y)/(limit*2)*100));
+    const name=escapeHtml(p.name||'Unknown player');
+    return `<div class="player-marker" style="left:${left}%;top:${top}%" title="${name}: ${p.location_x.toFixed(0)}, ${p.location_y.toFixed(0)}"><span></span><strong>${name}</strong></div>`;
+  }).join('')}`;
+}
+function setMapEnabled(enabled) {
+  state.mapEnabled=enabled;
+  $('#mapToggle').checked=enabled;
+  $('#playerMap').classList.toggle('map-enabled',enabled);
+}
+async function updateMapPlayers() {
+  if(!state.profileId)return;
+  try {
+    const result=await call('players');
+    renderPlayers(result.data?.players||[]);
+  } catch(e){notify(`Map update failed: ${e.message}`)}
+}
+function scheduleMapUpdate() {
+  clearTimeout(state.mapUpdateTimer);
+  state.mapUpdateTimer=null;
+  if(!state.mapAutoUpdate)return;
+  state.mapUpdateTimer=setTimeout(async()=>{
+    await updateMapPlayers();
+    scheduleMapUpdate();
+  },10000);
+}
+function setMapAutoUpdate(enabled) {
+  state.mapAutoUpdate=enabled;
+  $('#mapAutoUpdateToggle').checked=enabled;
+  scheduleMapUpdate();
 }
 function renderSettings(data={}) { $('#settingsGrid').innerHTML=Object.entries(data).map(([key,val])=>`<div class="card setting"><span>${escapeHtml(key)}</span><strong>${typeof val==='boolean'?(val?'Enabled':'Disabled'):escapeHtml(val)}</strong></div>`).join(''); }
 function renderWorld(data={}) { const actors=data.ActorData||[];const chars=actors.filter(a=>a.Type==='Character').length;const boxes=actors.filter(a=>a.Type==='PalBox').length;$('#worldSummary').innerHTML=`<article class="card stat"><span>ACTORS</span><strong>${actors.length}</strong></article><article class="card stat"><span>CHARACTERS</span><strong>${chars}</strong></article><article class="card stat"><span>PAL BOXES</span><strong>${boxes}</strong></article><article class="card stat"><span>SNAPSHOT FPS</span><strong>${data.FPS??'—'}</strong></article>`;$('#worldJson').textContent=JSON.stringify(data,null,2); }
@@ -92,7 +132,9 @@ $('#savedProfiles').onclick=async e=>{const edit=e.target.dataset.edit,del=e.tar
 $('#announceForm').onsubmit=async e=>{e.preventDefault();try{await call('announce',{message:new FormData(e.target).get('message')});e.target.reset();notify('Announcement broadcast.',true)}catch(err){notify(err.message)}};
 $$('[data-action]').forEach(b=>b.onclick=()=>confirmAction(b.dataset.action));$$('[data-refresh]').forEach(b=>b.onclick=()=>refresh(b.dataset.refresh));
 $('#playerList').onclick=e=>{if(e.target.dataset.playerAction)confirmAction(e.target.dataset.playerAction,{userid:e.target.dataset.userid})};$('#confirmRun').onclick=runConfirmed;
+$('#mapToggle').onchange=e=>setMapEnabled(e.target.checked);
+$('#mapAutoUpdateToggle').onchange=e=>setMapAutoUpdate(e.target.checked);
 $('#endpointList').onclick=e=>{const b=e.target.closest('[data-endpoint]');if(b){state.selectedEndpoint=b.dataset.endpoint;renderConsole()}};
 $('#endpointForm').onsubmit=async e=>{e.preventDefault();try{const result=await call(state.selectedEndpoint,Object.fromEntries(new FormData(e.target)));$('#responseOutput').textContent=JSON.stringify(result,null,2)}catch(err){$('#responseOutput').textContent=err.message}};
 $('#copyResponse').onclick=()=>navigator.clipboard.writeText($('#responseOutput').textContent);
-renderConsole();loadProfiles().catch(e=>notify(e.message));
+renderConsole();renderPlayerMap();loadProfiles().catch(e=>notify(e.message));

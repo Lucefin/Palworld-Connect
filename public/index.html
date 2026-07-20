@@ -12,6 +12,7 @@
       <nav>
         <button class="nav active" data-view="dashboard"><span>⌂</span> Overview</button>
         <button class="nav" data-view="players"><span>♙</span> Players</button>
+        <button class="nav" data-view="map"><span>⌖</span> Map</button>
         <button class="nav" data-view="settings"><span>⚙</span> Settings</button>
         <button class="nav" data-view="world"><span>◇</span> World data</button>
         <button class="nav" data-view="console"><span>›_</span> API console</button>
@@ -49,7 +50,20 @@
         </div>
       </section>
 
-      <section id="players" class="view"><div class="section-head"><div><p class="eyebrow">LIVE ROSTER</p><h2>Connected players</h2></div><button data-refresh="players" class="ghost">↻ Refresh</button></div><div id="playerList" class="card table-wrap empty">Connect to load players.</div></section>
+      <section id="players" class="view">
+        <div class="section-head"><div><p class="eyebrow">LIVE ROSTER</p><h2>Connected players</h2></div><button data-refresh="players" class="ghost">↻ Refresh</button></div>
+        <div id="playerList" class="card table-wrap empty">Connect to load players.</div>
+      </section>
+      <section id="map" class="view">
+        <div class="section-head map-head">
+          <div><p class="eyebrow">PLAYER LOCATIONS</p><h2>Map</h2></div>
+          <div class="map-controls">
+            <label class="map-toggle"><span>Enable map</span><input id="mapToggle" type="checkbox" role="switch" aria-controls="playerMap"><span class="toggle-track" aria-hidden="true"></span></label>
+            <label class="map-toggle"><span>Auto-update (10s)</span><input id="mapAutoUpdateToggle" type="checkbox" role="switch" aria-controls="playerMap"><span class="toggle-track" aria-hidden="true"></span></label>
+          </div>
+        </div>
+        <div id="playerMap" class="card player-map" aria-label="Current player locations"></div>
+      </section>
       <section id="settings" class="view"><div class="section-head"><div><p class="eyebrow">CONFIGURATION</p><h2>Server settings</h2></div><button data-refresh="settings" class="ghost">↻ Refresh</button></div><div id="settingsGrid" class="settings-grid"><div class="card empty">Connect to inspect settings.</div></div></section>
       <section id="world" class="view"><div class="section-head"><div><p class="eyebrow">ACTOR SNAPSHOT</p><h2>World data</h2></div><button data-refresh="gameData" class="ghost">↻ Load snapshot</button></div><div id="worldSummary" class="stats mini"></div><pre id="worldJson" class="card code">Connect to load world actor data.</pre></section>
       <section id="console" class="view"><div class="section-head"><div><p class="eyebrow">ADVANCED</p><h2>API console</h2></div></div><div class="console-grid"><div id="endpointList" class="card endpoint-list"></div><div class="card console-card"><div id="endpointMeta"></div><form id="endpointForm"></form><div class="response-head"><span>RESPONSE</span><button id="copyResponse" class="text-btn">Copy</button></div><pre id="responseOutput" class="code inner">Select an endpoint to begin.</pre></div></div></section>
