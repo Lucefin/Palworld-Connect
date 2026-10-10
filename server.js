@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, mkdir } from 'node:fs/promises';
 import { existsSync, createReadStream } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +9,7 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
 const DATA = process.env.DATA_DIR || path.join(ROOT, 'data');
 const PROFILE_FILE = path.join(DATA, 'profiles.json');
+const PLAYER_LOCATION_DIR = path.join(DATA, 'player-locations');
 const PORT = Number(process.env.PORT || 3000);
 const MAX_BODY = 1024 * 1024;
 
@@ -59,6 +60,26 @@ async function profiles() {
 async function saveProfiles(value) {
   await mkdir(DATA, { recursive: true });
   await writeFile(PROFILE_FILE, JSON.stringify(value, null, 2), { mode: 0o600 });
+}
+
+async function recordPlayerLocations(profileId, input) {
+  const profile = (await profiles()).find(item => item.id === profileId);
+  if (!profile) throw new Error('Profile not found');
+  const players = Array.isArray(input.players) ? input.players : [];
+  if (players.length > 1000) throw new Error('Too many player locations');
+  const timestamp = new Date().toISOString();
+  const records = players.map(player => {
+    const playerId = String(player.userId || player.playerId || '').trim();
+    const x = Number(player.location_x);
+    const y = Number(player.location_y);
+    if (!playerId || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { timestamp, playerId, x, y, playerName: String(player.name || '') };
+  }).filter(Boolean);
+  if (!records.length) return { recorded: 0, timestamp };
+  const directory = path.join(PLAYER_LOCATION_DIR, profileId);
+  await mkdir(directory, { recursive: true });
+  await appendFile(path.join(directory, `${timestamp.slice(0, 10)}.ndjson`), `${records.map(record => JSON.stringify(record)).join('\n')}\n`, { mode: 0o600 });
+  return { recorded: records.length, timestamp };
 }
 
 function sanitizeProfile(input, existing = {}) {
@@ -143,6 +164,9 @@ export async function handler(req, res) {
         return json(res, 200, publicProfile(value[index]));
       }
       if (req.method === 'DELETE') { value.splice(index, 1); await saveProfiles(value); res.writeHead(204); return res.end(); }
+    }
+    if (parts[0] === 'api' && parts[1] === 'player-locations' && parts[2] && parts.length === 3 && req.method === 'POST') {
+      return json(res, 201, await recordPlayerLocations(parts[2], await body(req)));
     }
     if (parts[0] === 'api' && parts[1] === 'palworld' && parts[2] && parts[3]) return proxy(req, res, parts[2], parts[3]);
     if (req.method === 'GET' && staticFile(req, res, url.pathname)) return;

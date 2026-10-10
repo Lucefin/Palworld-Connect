@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -26,3 +26,18 @@ test('profiles can be created, normalized, updated and deleted',async()=>{
   assert.deepEqual(await (await fetch(`${base}/api/profiles`)).json(),[]);
 });
 test('rejects malformed profiles',async()=>{const r=await fetch(`${base}/api/profiles`,{method:'POST',headers:{'content-type':'application/json'},body:'{}'});assert.equal(r.status,400)});
+test('records player locations in daily append-only files',async()=>{
+  let r=await fetch(`${base}/api/profiles`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'Recorder',url:'localhost:8212'})});
+  const profile=await r.json();
+  r=await fetch(`${base}/api/player-locations/${profile.id}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({players:[
+    {userId:'steam-1',name:'Lamball',location_x:123.5,location_y:-456},
+    {userId:'no-location',name:'Skipped'}
+  ]})});
+  assert.equal(r.status,201);
+  const result=await r.json();
+  assert.equal(result.recorded,1);
+  const contents=await readFile(path.join(dataDir,'player-locations',profile.id,`${result.timestamp.slice(0,10)}.ndjson`),'utf8');
+  const record=JSON.parse(contents.trim());
+  assert.deepEqual({...record,timestamp:undefined},{timestamp:undefined,playerId:'steam-1',x:123.5,y:-456,playerName:'Lamball'});
+  assert.match(record.timestamp,/^\d{4}-\d{2}-\d{2}T/);
+});

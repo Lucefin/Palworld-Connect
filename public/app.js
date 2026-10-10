@@ -1,6 +1,6 @@
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
-const state = { profiles: [], profileId: '', selectedEndpoint: 'info', editingId: '', players: [], mapEnabled: false, mapBlurred: true, mapAutoUpdate: false, mapUpdateTimer: null, mapZoomUpdateTimer: null, mapZoom: 1, mapPanX: 0, mapPanY: 0 };
+const state = { profiles: [], profileId: '', selectedEndpoint: 'info', editingId: '', players: [], mapEnabled: false, mapBlurred: true, mapAutoUpdate: false, mapRecording: false, mapUpdateTimer: null, mapZoomUpdateTimer: null, mapZoom: 1, mapPanX: 0, mapPanY: 0 };
 
 const catalog = {
   info: { label: 'Server info', method: 'GET', path: '/info', description: 'Server identity and version.' },
@@ -144,7 +144,9 @@ async function updateMapPlayers() {
   if(!state.profileId)return;
   try {
     const result=await call('players');
-    renderPlayers(result.data?.players||[]);
+    const players=result.data?.players||[];
+    renderPlayers(players);
+    if(state.mapRecording)await api(`/api/player-locations/${state.profileId}`,{method:'POST',body:JSON.stringify({players})});
   } catch(e){notify(`Map update failed: ${e.message}`)}
 }
 function scheduleMapUpdate() {
@@ -159,7 +161,19 @@ function scheduleMapUpdate() {
 function setMapAutoUpdate(enabled) {
   state.mapAutoUpdate=enabled;
   $('#mapAutoUpdateToggle').checked=enabled;
+  if(!enabled&&state.mapRecording){
+    state.mapRecording=false;
+    $('#mapRecordToggle').checked=false;
+  }
   scheduleMapUpdate();
+}
+function setMapRecording(enabled) {
+  state.mapRecording=enabled;
+  $('#mapRecordToggle').checked=enabled;
+  if(enabled){
+    setMapAutoUpdate(true);
+    updateMapPlayers();
+  }
 }
 function renderSettings(data={}) { $('#settingsGrid').innerHTML=Object.entries(data).map(([key,val])=>`<div class="card setting"><span>${escapeHtml(key)}</span><strong>${typeof val==='boolean'?(val?'Enabled':'Disabled'):escapeHtml(val)}</strong></div>`).join(''); }
 function renderWorld(data={}) { const actors=data.ActorData||[];const chars=actors.filter(a=>a.Type==='Character').length;const boxes=actors.filter(a=>a.Type==='PalBox').length;$('#worldSummary').innerHTML=`<article class="card stat"><span>ACTORS</span><strong>${actors.length}</strong></article><article class="card stat"><span>CHARACTERS</span><strong>${chars}</strong></article><article class="card stat"><span>PAL BOXES</span><strong>${boxes}</strong></article><article class="card stat"><span>SNAPSHOT FPS</span><strong>${data.FPS??'—'}</strong></article>`;$('#worldJson').textContent=JSON.stringify(data,null,2); }
@@ -181,8 +195,8 @@ $('#playerList').onclick=e=>{if(e.target.dataset.playerAction)confirmAction(e.ta
 $('#mapToggle').onchange=e=>setMapEnabled(e.target.checked);
 $('#mapBlurToggle').onchange=e=>setMapBlurred(e.target.checked);
 $('#mapAutoUpdateToggle').onchange=e=>setMapAutoUpdate(e.target.checked);
+$('#mapRecordToggle').onchange=e=>setMapRecording(e.target.checked);
 $('#mapReset').onclick=resetMapView;
-$('#mapResetNav').onclick=()=>{resetMapView();$('.nav[data-view="map"]').click()};
 $('#playerMap').addEventListener('wheel',zoomMap,{passive:false});
 $('#endpointList').onclick=e=>{const b=e.target.closest('[data-endpoint]');if(b){state.selectedEndpoint=b.dataset.endpoint;renderConsole()}};
 $('#endpointForm').onsubmit=async e=>{e.preventDefault();try{const result=await call(state.selectedEndpoint,Object.fromEntries(new FormData(e.target)));$('#responseOutput').textContent=JSON.stringify(result,null,2)}catch(err){$('#responseOutput').textContent=err.message}};
